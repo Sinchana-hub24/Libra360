@@ -13,10 +13,19 @@ class BorrowingResponse(BaseModel):
     borrowing_id: str
     student_id: str
     book_id: str
+
     issue_date: datetime
     due_date: datetime
     return_date: Optional[datetime] = None
+
     borrowing_days: int
+    grace_period_days: int
+    fine_per_day_paise: int
+
+    policy_id: str
+    policy_name: Optional[str] = None
+
     status: Literal["active", "returned", "overdue"]
+
     fine_amount_paise: int = Field(default=0, ge=0)
     currency: Literal["INR"] = "INR"

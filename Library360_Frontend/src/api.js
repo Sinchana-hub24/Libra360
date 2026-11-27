@@ -55,3 +55,26 @@ export const put = (path, body) => api(path, {
   method: "PUT",
   body: JSON.stringify(body)
 });
+
+export async function getBlob(path) {
+  const token = getToken();
+
+  const response = await fetch(`${API_ROOT}${path}`, {
+    headers: token
+      ? { Authorization: `Bearer ${token}` }
+      : {}
+  });
+
+  if (!response.ok) {
+    let message = `Request failed (${response.status})`;
+
+    try {
+      const data = await response.json();
+      message = data.detail || message;
+    } catch {}
+
+    throw new Error(message);
+  }
+
+  return response.blob();
+}

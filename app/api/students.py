@@ -19,7 +19,6 @@ router = APIRouter(
 )
 def register_student(student: StudentCreate):
 
-    # Check whether this email is already registered
     existing_students = (
         db.collection("students")
         .where("email", "==", student.email)
@@ -33,7 +32,6 @@ def register_student(student: StudentCreate):
             detail="A student with this email already exists."
         )
 
-    # Generate a unique student document ID
     student_ref = db.collection("students").document()
 
     student_data = student.model_dump()
@@ -44,13 +42,26 @@ def register_student(student: StudentCreate):
         "created_at": firestore.SERVER_TIMESTAMP
     })
 
-    # Save student information in Firestore
     student_ref.set(student_data)
 
-    # Retrieve the saved document
     saved_student = student_ref.get().to_dict()
 
     return saved_student
+
+
+# NEW: Get all students
+@router.get(
+    "/",
+    response_model=list[StudentResponse]
+)
+def get_all_students():
+
+    students = db.collection("students").stream()
+
+    return [
+        student.to_dict()
+        for student in students
+    ]
 
 
 @router.get(

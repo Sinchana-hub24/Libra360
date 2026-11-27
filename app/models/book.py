@@ -6,11 +6,8 @@ from typing import Literal, Optional
 class BookCreate(BaseModel):
 
     title: str = Field(min_length=2, max_length=200)
-
     author: str = Field(min_length=2, max_length=150)
-
     isbn: str = Field(min_length=5, max_length=20)
-
     category: str = Field(min_length=2, max_length=100)
 
     book_type: Literal["physical", "digital"]
@@ -19,16 +16,12 @@ class BookCreate(BaseModel):
 
     # Physical book details
     total_copies: Optional[int] = Field(default=None, ge=1)
-
     shelf_location: Optional[str] = None
 
-    # Digital book details
+    # Digital book details (filled after PDF upload)
     storage_bucket: Optional[str] = None
-
     storage_path: Optional[str] = None
-
     file_format: Optional[Literal["PDF"]] = None
-
     file_size_bytes: Optional[int] = Field(default=None, gt=0)
 
     @model_validator(mode="after")
@@ -46,41 +39,15 @@ class BookCreate(BaseModel):
                     "Physical books must have a shelf_location."
                 )
 
-        if self.book_type == "digital":
-
-            if not self.storage_bucket:
-                raise ValueError(
-                    "Digital books must have a storage_bucket."
-                )
-
-            if not self.storage_path:
-                raise ValueError(
-                    "Digital books must have a storage_path."
-                )
-
-            if self.file_format != "PDF":
-                raise ValueError(
-                    "Digital books must be in PDF format."
-                )
-
-            if self.file_size_bytes is None:
-                raise ValueError(
-                    "Digital books must have file_size_bytes."
-                )
-
         return self
 
 
 class BookResponse(BaseModel):
 
     book_id: str
-
     title: str
-
     author: str
-
     isbn: str
-
     category: str
 
     book_type: Literal["physical", "digital"]
@@ -90,15 +57,11 @@ class BookResponse(BaseModel):
     status: Literal["active", "inactive"]
 
     total_copies: Optional[int] = None
-
     available_copies: Optional[int] = None
 
     shelf_location: Optional[str] = None
 
     storage_bucket: Optional[str] = None
-
     storage_path: Optional[str] = None
-
     file_format: Optional[str] = None
-
     file_size_bytes: Optional[int] = None
