@@ -33,7 +33,7 @@ frontend-install:
 	cd Library360_Frontend && npm install
 
 frontend-start:
-	cd Library360_Frontend && npm run dev
+	cd Library360_Frontend && PATH=/tmp/opencode/node/bin:$$PATH npm run dev
 
 setup-librarian:
 	curl -sS -X POST http://127.0.0.1:8000/auth/setup-librarian \
@@ -51,6 +51,6 @@ run:
 			floci/floci-gcp:latest; \
 	fi
 	@set -a && . ./.env && set +a && nohup .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/opencode/library360-backend.log 2>&1 & echo "backend pid $$!"
-	@cd Library360_Frontend && nohup npm run dev > /tmp/opencode/library360-frontend.log 2>&1 & echo "frontend pid $$!"
+	@cd Library360_Frontend && PATH=/tmp/opencode/node/bin:$$PATH nohup npm run dev > /tmp/opencode/library360-frontend.log 2>&1 & echo "frontend pid $$!"
 	@echo "Library360 backend starting on http://127.0.0.1:8000"
 	@echo "Library360 frontend starting on http://127.0.0.1:5173"
