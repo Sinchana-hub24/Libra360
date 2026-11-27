@@ -204,21 +204,38 @@ def student_login(login: LoginRequest):
             .limit(1)
             .stream()
         )
+
+        account = next(iter(accounts), None)
+
     else:
+        normalized_usn = identifier.upper()
+
         accounts = (
             db.collection("user_accounts")
-            .where("student_id", "==", identifier)
+            .where("usn", "==", normalized_usn)
             .where("role", "==", "student")
             .limit(1)
             .stream()
         )
 
-    account = next(iter(accounts), None)
+        account = next(iter(accounts), None)
+
+        # Backward compatibility for accounts created before USN login.
+        if account is None:
+            legacy_accounts = (
+                db.collection("user_accounts")
+                .where("student_id", "==", identifier)
+                .where("role", "==", "student")
+                .limit(1)
+                .stream()
+            )
+
+            account = next(iter(legacy_accounts), None)
 
     if account is None:
         raise HTTPException(
             status_code=401,
-            detail="Invalid student ID/email or password."
+            detail="Invalid USN/email or password."
         )
 
     account_data = account.to_dict()
@@ -229,13 +246,14 @@ def student_login(login: LoginRequest):
     ):
         raise HTTPException(
             status_code=401,
-            detail="Invalid student ID/email or password."
+            detail="Invalid USN/email or password."
         )
 
     token = create_access_token({
         "sub": account.id,
         "role": "student",
-        "student_id": account_data.get("student_id")
+        "student_id": account_data.get("student_id"),
+        "usn": account_data.get("usn")
     })
 
     return {
@@ -250,16 +268,42 @@ def create_student_account(
     account: StudentAccountCreate,
     librarian: dict = Depends(require_librarian)
 ):
-    student_ref = db.collection("students").document(account.student_id)
-    student = student_ref.get()
+    normalized_usn = account.usn.strip().upper() if account.usn else None
 
-    if not student.exists:
+    student = None
+
+    if normalized_usn:
+        students = (
+            db.collection("students")
+            .where("usn", "==", normalized_usn)
+            .limit(1)
+            .stream()
+        )
+
+        student = next(iter(students), None)
+
+    if student is None and account.student_id:
+        student_ref = db.collection("students").document(account.student_id)
+        student_snapshot = student_ref.get()
+
+        if student_snapshot.exists:
+            student = student_snapshot
+
+    if student is None:
         raise HTTPException(
             status_code=404,
             detail="Student profile not found."
         )
 
     student_data = student.to_dict()
+    student_id = student_data.get("student_id") or student.id
+    usn = normalized_usn or student_data.get("usn")
+
+    if not usn:
+        raise HTTPException(
+            status_code=400,
+            detail="Student profile does not have a USN."
+        )
 
     if student_data.get("status") != "active":
         raise HTTPException(
@@ -284,7 +328,7 @@ def create_student_account(
 
     existing_student_account = (
         db.collection("user_accounts")
-        .where("student_id", "==", account.student_id)
+        .where("student_id", "==", student_id)
         .limit(1)
         .stream()
     )
@@ -295,6 +339,19 @@ def create_student_account(
             detail="This student already has a login account."
         )
 
+    existing_usn_account = (
+        db.collection("user_accounts")
+        .where("usn", "==", usn)
+        .limit(1)
+        .stream()
+    )
+
+    if any(existing_usn_account):
+        raise HTTPException(
+            status_code=409,
+            detail="This USN already has a login account."
+        )
+
     account_ref = db.collection("user_accounts").document()
 
     account_ref.set({
@@ -303,7 +360,8 @@ def create_student_account(
         "email": email,
         "password_hash": hash_password(account.password),
         "role": "student",
-        "student_id": account.student_id,
+        "student_id": student_id,
+        "usn": usn,
         "status": "active",
         "created_at": firestore.SERVER_TIMESTAMP
     })
@@ -311,7 +369,8 @@ def create_student_account(
     return {
         "message": "Student login account created successfully.",
         "account_id": account_ref.id,
-        "student_id": account.student_id,
+        "student_id": student_id,
+        "usn": usn,
         "email": email,
         "role": "student"
     }
@@ -326,5 +385,6 @@ def get_my_account(
         "full_name": current_user.get("full_name"),
         "email": current_user.get("email"),
         "role": current_user.get("role"),
-        "student_id": current_user.get("student_id")
+        "student_id": current_user.get("student_id"),
+        "usn": current_user.get("usn")
     }

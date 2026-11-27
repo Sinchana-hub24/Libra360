@@ -1,11 +1,16 @@
 
 from pydantic import BaseModel, Field
-from typing import Literal
+from typing import Literal, Optional
 from datetime import datetime
 
 
 # Data received when registering a student
 class StudentCreate(BaseModel):
+
+    usn: str = Field(
+        min_length=3,
+        max_length=30
+    )
 
     full_name: str = Field(
         min_length=2,
@@ -32,6 +37,8 @@ class StudentCreate(BaseModel):
 class StudentResponse(BaseModel):
 
     student_id: str
+
+    usn: Optional[str] = None
 
     full_name: str
 

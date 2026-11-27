@@ -1,0 +1,23 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+
+# Local emulator data
+data/
+
+# Frontend
+Library360_Frontend/node_modules/
+Library360_Frontend/dist/
+
+# Logs / OS files
+*.log
+.DS_Store
+
+# Editor
+.vscode/
