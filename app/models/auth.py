@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+from typing import Optional
+
+from pydantic import BaseModel, Field, model_validator
 
 
 class LoginRequest(BaseModel):
@@ -7,8 +9,15 @@ class LoginRequest(BaseModel):
 
 
 class StudentAccountCreate(BaseModel):
-    student_id: str = Field(min_length=1)
+    usn: Optional[str] = Field(default=None, min_length=1, max_length=30)
+    student_id: Optional[str] = Field(default=None, min_length=1)
     password: str = Field(min_length=8, max_length=128)
+
+    @model_validator(mode="after")
+    def require_student_identifier(self):
+        if not self.usn and not self.student_id:
+            raise ValueError("Either usn or student_id is required.")
+        return self
 
 
 class LibrarianSetup(BaseModel):

@@ -10,6 +10,7 @@ students_collection = db.collection("students")
 # Sample student document
 student_data = {
     "student_id": "STU001",
+    "usn": "1RV21CS001",
     "full_name": "Aarav Sharma",
     "email": "aarav@example.com",
     "department": "Computer Science",

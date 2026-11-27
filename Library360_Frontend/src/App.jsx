@@ -160,7 +160,7 @@ function App() {
             </div>
             <div className="user-meta">
               <b>{profile.full_name}</b>
-              <span>{role === "librarian" ? "Librarian" : `Student · ${profile.student_id || ""}`}</span>
+              <span>{role === "librarian" ? "Librarian" : `Student · ${profile.usn || profile.student_id || ""}`}</span>
             </div>
           </div>
         </header>
@@ -277,14 +277,14 @@ function Login({ onLogin, busy, notice }) {
           </div>
 
           <form onSubmit={submit}>
-            <label>{selectedRole === "librarian" ? "Email address" : "Student ID or email"}</label>
+            <label>{selectedRole === "librarian" ? "Email address" : "USN or email"}</label>
             <div className="field-wrap">
               <UserRound size={17} />
               <input
                 required
                 value={identifier}
                 onChange={e => setIdentifier(e.target.value)}
-                placeholder={selectedRole === "librarian" ? "you@library.edu" : "e.g. STU001"}
+                placeholder={selectedRole === "librarian" ? "you@library.edu" : "e.g. 1RV21CS001"}
               />
             </div>
 
@@ -393,7 +393,7 @@ function Dashboard({ profile, role, go }) {
         {role === "student" ? (
           <>
             <Stat icon={<ArrowLeftRight />} label="My active loans" value={myData.length ? active : "—"} tone="violet" hint="Current borrowings" />
-            <Stat icon={<GraduationCap />} label="My student ID" value={profile.student_id || "—"} tone="green" hint="Registered profile" />
+            <Stat icon={<GraduationCap />} label="My USN" value={profile.usn || profile.student_id || "—"} tone="green" hint="Login identifier" />
           </>
         ) : (
           <>
@@ -607,8 +607,8 @@ function Books({ role, notify }) {
 }
 
 function Students({ notify }) {
-  const [profileForm, setProfileForm] = useState({ full_name: "", email: "", department: "", year: 1 });
-  const [accountForm, setAccountForm] = useState({ student_id: "", password: "" });
+  const [profileForm, setProfileForm] = useState({ usn: "", full_name: "", email: "", department: "", year: 1 });
+  const [accountForm, setAccountForm] = useState({ usn: "", password: "" });
   const [lookupId, setLookupId] = useState("");
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -618,10 +618,10 @@ function Students({ notify }) {
 
     try {
       const result = await post("/students/", { ...profileForm, year: Number(profileForm.year) });
-      notify(`Student profile created. ID: ${result.student_id}`);
-      setAccountForm({ ...accountForm, student_id: result.student_id });
-      setLookupId(result.student_id);
-      setProfileForm({ full_name: "", email: "", department: "", year: 1 });
+      notify(`Student profile created. USN: ${result.usn} · ID: ${result.student_id}`);
+      setAccountForm({ usn: result.usn, password: "" });
+      setLookupId(result.usn);
+      setProfileForm({ usn: "", full_name: "", email: "", department: "", year: 1 });
     } catch (e) {
       notify(errorText(e), "error");
     }
@@ -631,9 +631,9 @@ function Students({ notify }) {
     e.preventDefault();
 
     try {
-      const result = await post("/auth/students", accountForm);
+      const result = await post("/auth/students", { usn: accountForm.usn, password: accountForm.password });
       notify(result.message || "Student login account created.");
-      setAccountForm({ student_id: "", password: "" });
+      setAccountForm({ usn: "", password: "" });
     } catch (e) {
       notify(errorText(e), "error");
     }
@@ -644,7 +644,7 @@ function Students({ notify }) {
     setLoading(true);
 
     try {
-      setStudent(await get(`/students/${encodeURIComponent(lookupId)}`));
+      setStudent(await get(`/students/usn/${encodeURIComponent(lookupId)}`));
     } catch (e) {
       setStudent(null);
       notify(errorText(e), "error");
@@ -663,6 +663,7 @@ function Students({ notify }) {
             <div><h3><Users size={18} /> Register student profile</h3><p>Create the student's library record first.</p></div>
           </div>
           <form className="stack-form" onSubmit={register}>
+            <Field label="USN"><input required minLength="3" maxLength="30" value={profileForm.usn} onChange={e => setProfileForm({ ...profileForm, usn: e.target.value })} placeholder="e.g. 1RV21CS001" /></Field>
             <Field label="Full name"><input required minLength="2" value={profileForm.full_name} onChange={e => setProfileForm({ ...profileForm, full_name: e.target.value })} /></Field>
             <Field label="Email"><input type="email" required value={profileForm.email} onChange={e => setProfileForm({ ...profileForm, email: e.target.value })} /></Field>
             <Field label="Department"><input required value={profileForm.department} onChange={e => setProfileForm({ ...profileForm, department: e.target.value })} /></Field>
@@ -676,7 +677,7 @@ function Students({ notify }) {
             <div><h3><KeyRound size={18} /> Create student login</h3><p>Requires an existing active student profile.</p></div>
           </div>
           <form className="stack-form" onSubmit={createAccount}>
-            <Field label="Student ID"><input required value={accountForm.student_id} onChange={e => setAccountForm({ ...accountForm, student_id: e.target.value })} placeholder="e.g. STU002" /></Field>
+            <Field label="USN"><input required minLength="3" maxLength="30" value={accountForm.usn} onChange={e => setAccountForm({ ...accountForm, usn: e.target.value })} placeholder="e.g. 1RV21CS001" /></Field>
             <Field label="Temporary password"><input type="password" minLength="8" required value={accountForm.password} onChange={e => setAccountForm({ ...accountForm, password: e.target.value })} /></Field>
             <button className="primary-btn">Create login account</button>
           </form>
@@ -686,10 +687,10 @@ function Students({ notify }) {
 
       <div className="panel lookup-panel">
         <div className="panel-head">
-          <div><h3>Find a student</h3><p>Look up a student using their student ID.</p></div>
+          <div><h3>Find a student</h3><p>Look up a student using their USN or student ID.</p></div>
         </div>
         <form className="inline-form" onSubmit={lookup}>
-          <input required placeholder="Enter student ID" value={lookupId} onChange={e => setLookupId(e.target.value)} />
+          <input required placeholder="Enter USN or student ID" value={lookupId} onChange={e => setLookupId(e.target.value)} />
           <button className="secondary-btn">{loading ? "Searching…" : <><Search size={16} /> Search</>}</button>
         </form>
         {student && (
@@ -699,8 +700,9 @@ function Students({ notify }) {
               <b>{student.full_name}</b>
               <p>{student.email} · {student.department} · Year {student.year}</p>
               <span className="status-pill good">{student.status}</span>
+              <small className="student-id-note">Student ID: {student.student_id}</small>
             </div>
-            <strong>{student.student_id}</strong>
+            <strong>{student.usn || student.student_id}</strong>
           </div>
         )}
       </div>
@@ -1002,6 +1004,18 @@ function DigitalAdmin({ notify }) {
     }
   };
 
+  const cancelAccess = async (studentId, bookId) => {
+    try {
+      const result = await post(`/digital-access/${encodeURIComponent(studentId)}/${encodeURIComponent(bookId)}/revoke`);
+      notify(result.message || "Digital access cancelled.");
+
+      const resultData = await get(`/digital-access/${encodeURIComponent(studentId)}`);
+      setAccess(asArray(resultData));
+    } catch (e) {
+      notify(errorText(e), "error");
+    }
+  };
+
   const revokeAccess = async (e) => {
     e.preventDefault();
 
@@ -1052,7 +1066,7 @@ function DigitalAdmin({ notify }) {
               <select required value={grant.student_id} onChange={e => setGrant({ ...grant, student_id: e.target.value })}>
                 <option value="">Choose a student</option>
                 {students.filter(s => s.status === "active").map(s => (
-                  <option key={s.student_id} value={s.student_id}>{s.full_name} — {s.student_id}</option>
+                  <option key={s.student_id} value={s.student_id}>{s.full_name} — {s.usn || s.student_id}</option>
                 ))}
               </select>
             </Field>
@@ -1101,13 +1115,22 @@ function DigitalAdmin({ notify }) {
       <div className="two-col">
         <div className="panel">
           <div className="panel-head">
-            <div><h3>Look up digital permissions</h3><p>Search using a student's ID.</p></div>
+            <div><h3>Look up digital permissions</h3><p>Search using a student's ID or USN.</p></div>
           </div>
           <form className="inline-form" onSubmit={findAccess}>
-            <input required placeholder="Student ID" value={lookup} onChange={e => setLookup(e.target.value)} />
+            <input required placeholder="Student ID or USN" value={lookup} onChange={e => setLookup(e.target.value)} />
             <button className="secondary-btn">Search</button>
           </form>
-          <RecordsTable records={access} columns={["title", "author", "book_id", "status"]} />
+          <RecordsTable
+            records={access}
+            columns={["title", "author", "book_id", "status"]}
+            actionColumn
+            actions={(row) => (
+              <button className="text-btn" onClick={() => cancelAccess(row.student_id || lookup, row.book_id)}>
+                Cancel access
+              </button>
+            )}
+          />
         </div>
 
         <div className="panel">
@@ -1119,7 +1142,7 @@ function DigitalAdmin({ notify }) {
               <select required value={revoke.student_id} onChange={e => setRevoke({ ...revoke, student_id: e.target.value })}>
                 <option value="">Choose a student</option>
                 {students.map(s => (
-                  <option key={s.student_id} value={s.student_id}>{s.full_name} — {s.student_id}</option>
+                  <option key={s.student_id} value={s.usn || s.student_id}>{s.full_name} — {s.usn || s.student_id}</option>
                 ))}
               </select>
             </Field>
@@ -1501,8 +1524,9 @@ function Field({ label, children, wide }) {
   );
 }
 
-function RecordsTable({ records = [], columns = [], loading = false, error = "" }) {
+function RecordsTable({ records = [], columns = [], loading = false, error = "", actionColumn = false, actions }) {
   const rows = asArray(records);
+  const columnsToRender = actionColumn ? [...columns, "Action"] : columns;
 
   if (error) {
     return (
@@ -1536,12 +1560,20 @@ function RecordsTable({ records = [], columns = [], loading = false, error = "" 
     <div className="table-wrap">
       <table>
         <thead>
-          <tr>{columns.map(c => <th key={c}>{label(c)}</th>)}</tr>
+          <tr>{columnsToRender.map(c => <th key={c}>{label(c)}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
             <tr key={r.id || r.fine_id || r.borrowing_id || i}>
-              {columns.map(c => {
+              {columnsToRender.map(c => {
+                if (c === "Action") {
+                  return (
+                    <td key={c}>
+                      {actions?.(r, r.access_id || r.book_id || i)}
+                    </td>
+                  );
+                }
+
                 const isStatus = c === "status" || c === "payment_status";
                 const statusValue = String(r[c] || "").toLowerCase();
 
