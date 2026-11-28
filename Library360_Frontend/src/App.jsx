@@ -1297,7 +1297,14 @@ function FineDesk({ notify }) {
     try {
       const data = await get(`/borrowings/fines/student/${encodeURIComponent(studentId)}`);
       setStudentInfo(data);
-      setFines(asArray(data.fines));
+      const merged = (asArray(data.fines) || []).map(f => ({
+        ...f,
+        student_name: data.full_name,
+        student_usn: data.usn,
+        student_email: data.email,
+        student_department: data.department,
+      }));
+      setFines(merged);
     } catch (e) {
       notify(errorText(e), "error");
     }
@@ -1313,7 +1320,14 @@ function FineDesk({ notify }) {
       notify("Fine payment recorded.");
       const data = await get(`/borrowings/fines/student/${encodeURIComponent(studentId)}`);
       setStudentInfo(data);
-      setFines(asArray(data.fines));
+      const merged = (asArray(data.fines) || []).map(f => ({
+        ...f,
+        student_name: data.full_name,
+        student_usn: data.usn,
+        student_email: data.email,
+        student_department: data.department,
+      }));
+      setFines(merged);
     } catch (e) {
       notify(errorText(e), "error");
     }
@@ -1329,7 +1343,14 @@ function FineDesk({ notify }) {
       notify("Fine waived.");
       const data = await get(`/borrowings/fines/student/${encodeURIComponent(studentId)}`);
       setStudentInfo(data);
-      setFines(asArray(data.fines));
+      const merged = (asArray(data.fines) || []).map(f => ({
+        ...f,
+        student_name: data.full_name,
+        student_usn: data.usn,
+        student_email: data.email,
+        student_department: data.department,
+      }));
+      setFines(merged);
     } catch (e) {
       notify(errorText(e), "error");
     }
@@ -1347,29 +1368,20 @@ function FineDesk({ notify }) {
           <input required placeholder="Student ID or USN" value={studentId} onChange={e => setStudentId(e.target.value)} />
           <button className="secondary-btn"><Search size={16} /> Search fines</button>
         </form>
-        {studentInfo && (
-          <div className="info-card" style={{ marginTop: 14 }}>
-            <table className="student-info-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>USN</th>
-                  <th>Email</th>
-                  <th>Department</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>{studentInfo.full_name}</td>
-                  <td>{studentInfo.usn}</td>
-                  <td>{studentInfo.email}</td>
-                  <td>{studentInfo.department}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
-        <RecordsTable records={fines} columns={["fine_id", "borrowing_id", "student_id", "overdue_days", "fine_amount_paise", "payment_status"]} />
+        {studentInfo && fines.length > 0 ? (
+          <RecordsTable
+            records={fines}
+            columns={[
+              "student_name",
+              "student_usn",
+              "fine_id",
+              "borrowing_id",
+              "overdue_days",
+              "fine_amount_paise",
+              "payment_status",
+            ]}
+          />
+        ) : null}
       </div>
 
       <div className="two-col">
