@@ -27,6 +27,10 @@ router = APIRouter(
     tags=["Digital Books"]
 )
 
+# Storage limits (in bytes)
+MAX_FILE_SIZE = 50 * 1024 * 1024       # 50 MB per PDF
+MAX_TOTAL_STORAGE = 500 * 1024 * 1024  # 500 MB total across all digital books
+
 
 @router.post("/upload/{book_id}")
 async def upload_digital_book(
@@ -54,6 +58,28 @@ async def upload_digital_book(
     if not content.startswith(b"%PDF-"):
         raise HTTPException(400, "The uploaded file is not a valid PDF.")
 
+    # Per-file size limit
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            413,
+            f"File too large. Maximum size per PDF is {MAX_FILE_SIZE // (1024 * 1024)} MB."
+        )
+
+    # Total storage limit check
+    total_used = 0
+    all_books = db.collection("books").where("book_type", "==", "digital").stream()
+    for b in all_books:
+        b_data = b.to_dict()
+        total_used += b_data.get("file_size_bytes", 0) or 0
+
+    if total_used + len(content) > MAX_TOTAL_STORAGE:
+        remaining = MAX_TOTAL_STORAGE - total_used
+        raise HTTPException(
+            413,
+            f"Storage limit exceeded. Only {remaining // (1024 * 1024)} MB remaining "
+            f"of {MAX_TOTAL_STORAGE // (1024 * 1024)} MB total."
+        )
+
     bucket_name = settings.GCS_BUCKET_NAME
 
     # Find or create the storage bucket
@@ -77,7 +103,8 @@ async def upload_digital_book(
     book_ref.update({
         "storage_path": object_path,
         "file_name": safe_filename,
-        "content_type": "application/pdf"
+        "content_type": "application/pdf",
+        "file_size_bytes": len(content)
     })
 
     return {
