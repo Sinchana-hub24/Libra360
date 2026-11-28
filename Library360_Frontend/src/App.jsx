@@ -1349,10 +1349,24 @@ function FineDesk({ notify }) {
         </form>
         {studentInfo && (
           <div className="info-card" style={{ marginTop: 14 }}>
-            <p><strong>Name:</strong> {studentInfo.full_name}</p>
-            <p><strong>USN:</strong> {studentInfo.usn}</p>
-            <p><strong>Email:</strong> {studentInfo.email}</p>
-            <p><strong>Department:</strong> {studentInfo.department}</p>
+            <table className="student-info-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>USN</th>
+                  <th>Email</th>
+                  <th>Department</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{studentInfo.full_name}</td>
+                  <td>{studentInfo.usn}</td>
+                  <td>{studentInfo.email}</td>
+                  <td>{studentInfo.department}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         )}
         <RecordsTable records={fines} columns={["fine_id", "borrowing_id", "student_id", "overdue_days", "fine_amount_paise", "payment_status"]} />
