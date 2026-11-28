@@ -33,7 +33,7 @@ frontend-install:
 	cd Library360_Frontend && npm install
 
 frontend-start:
-	cd Library360_Frontend && npm run dev
+	cd Library360_Frontend && PATH=/tmp/opencode/node/bin:$$PATH nohup npm run dev > /tmp/opencode/library360-frontend.log 2>&1 & echo "frontend pid $$!"
 
 setup-librarian:
 	curl -sS -X POST http://127.0.0.1:8000/auth/setup-librarian \
@@ -47,7 +47,15 @@ run:
 			-e FLOCI_GCP_STORAGE_MODE=hybrid \
 			-v floci-gcp-data:/app/data \
 			floci/floci-gcp:latest;
-	@set -a && . ./.env && set +a && nohup .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/opencode/library360-backend.log 2>&1 & echo "backend pid $$!"
-	@cd Library360_Frontend && nohup npm run dev > /tmp/opencode/library360-frontend.log 2>&1 & echo "frontend pid $$!"
+	@if pgrep -f "uvicorn app.main:app" > /dev/null 2>&1; then \
+		echo "Backend already running on http://127.0.0.1:8000"; \
+	else \
+		set -a && . ./.env && set +a && nohup .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/opencode/library360-backend.log 2>&1 & echo "backend pid $$!"; \
+	fi
+	@if pgrep -f "vite" > /dev/null 2>&1; then \
+		echo "Frontend already running on http://127.0.0.1:5173"; \
+	else \
+		cd Library360_Frontend && PATH=/tmp/opencode/node/bin:$$PATH nohup npm run dev > /tmp/opencode/library360-frontend.log 2>&1 & echo "frontend pid $$!"; \
+	fi
 	@echo "Library360 backend starting on http://127.0.0.1:8000"
 	@echo "Library360 frontend starting on http://127.0.0.1:5173"
