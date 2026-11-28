@@ -10,7 +10,6 @@ class Settings(BaseSettings):
 
     FIRESTORE_EMULATOR_HOST: str = "localhost:4588"
     STORAGE_EMULATOR_HOST: str = "http://localhost:4588"
-    PUBSUB_EMULATOR_HOST: str = "localhost:4588"
 
     GCS_BUCKET_NAME: str = "library360-digital-books"
 
