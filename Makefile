@@ -47,12 +47,12 @@ run:
 			-e FLOCI_GCP_STORAGE_MODE=hybrid \
 			-v floci-gcp-data:/app/data \
 			floci/floci-gcp:latest;
-	@if pgrep -f "uvicorn app.main:app" > /dev/null 2>&1; then \
+	@if curl -sS -m 2 http://127.0.0.1:8000/health > /dev/null 2>&1; then \
 		echo "Backend already running on http://127.0.0.1:8000"; \
 	else \
 		set -a && . ./.env && set +a && nohup .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/opencode/library360-backend.log 2>&1 & echo "backend pid $$!"; \
 	fi
-	@if pgrep -f "vite" > /dev/null 2>&1; then \
+	@if curl -sS -m 2 http://127.0.0.1:5173/ > /dev/null 2>&1; then \
 		echo "Frontend already running on http://127.0.0.1:5173"; \
 	else \
 		cd Library360_Frontend && PATH=/tmp/opencode/node/bin:$$PATH nohup npm run dev > /tmp/opencode/library360-frontend.log 2>&1 & echo "frontend pid $$!"; \
