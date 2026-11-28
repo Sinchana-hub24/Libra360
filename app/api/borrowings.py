@@ -281,8 +281,33 @@ def get_student_borrowings(student_id: str):
     }
 
 
+def resolve_student_id(student_id: str) -> str:
+    student_ref = db.collection("students").document(student_id)
+    student = student_ref.get()
+
+    if student.exists:
+        return student.to_dict().get("student_id") or student.id
+
+    student_snapshot = next(
+        iter(
+            db.collection("students")
+            .where("usn", "==", student_id.strip().upper())
+            .limit(1)
+            .stream()
+        ),
+        None
+    )
+
+    if student_snapshot is None:
+        raise HTTPException(status_code=404, detail="Student not found.")
+
+    return student_snapshot.to_dict().get("student_id") or student_snapshot.id
+
+
 @router.get("/fines/student/{student_id}")
 def get_student_fines(student_id: str):
+
+    student_id = resolve_student_id(student_id)
     student = db.collection("students").document(student_id).get()
 
     if not student.exists:

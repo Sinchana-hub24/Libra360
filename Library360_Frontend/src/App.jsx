@@ -1334,10 +1334,10 @@ function FineDesk({ notify }) {
 
       <div className="panel">
         <div className="panel-head">
-          <div><h3>Find student fines</h3><p>Search the fine records by student ID.</p></div>
+          <div><h3>Find student fines</h3><p>Search the fine records by student ID or USN.</p></div>
         </div>
         <form className="inline-form" onSubmit={search}>
-          <input required placeholder="Student ID" value={studentId} onChange={e => setStudentId(e.target.value)} />
+          <input required placeholder="Student ID or USN" value={studentId} onChange={e => setStudentId(e.target.value)} />
           <button className="secondary-btn"><Search size={16} /> Search fines</button>
         </form>
         <RecordsTable records={fines} columns={["fine_id", "borrowing_id", "student_id", "overdue_days", "fine_amount_paise", "payment_status"]} />
