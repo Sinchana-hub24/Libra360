@@ -143,6 +143,42 @@ def get_student_access(student_id: str):
     }
 
 
+@router.get("/all")
+def get_all_digital_access():
+
+    records = db.collection("digital_access").where(
+        "status", "==", "active"
+    ).stream()
+
+    access_list = []
+
+    for record in records:
+        data = record.to_dict()
+
+        student = db.collection("students").document(
+            data["student_id"]
+        ).get()
+
+        book = db.collection("books").document(
+            data["book_id"]
+        ).get()
+
+        access_list.append({
+            "access_id": record.id,
+            "student_id": data["student_id"],
+            "usn": student.to_dict().get("usn") if student.exists else None,
+            "student_name": student.to_dict().get("full_name") if student.exists else None,
+            "book_id": data["book_id"],
+            "book_title": book.to_dict().get("title") if book.exists else None,
+            "status": data["status"],
+        })
+
+    return {
+        "digital_access": access_list,
+        "total": len(access_list)
+    }
+
+
 @router.post("/{student_id}/{book_id}/revoke")
 def revoke_access(student_id: str, book_id: str):
 

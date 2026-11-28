@@ -958,6 +958,7 @@ function DigitalAdmin({ notify }) {
   const [grant, setGrant] = useState({ student_id: "", book_id: "", granted_by: "LIBRARIAN001" });
   const [lookup, setLookup] = useState("");
   const [access, setAccess] = useState([]);
+  const [allAccess, setAllAccess] = useState([]);
   const [revoke, setRevoke] = useState({ student_id: "", book_id: "" });
   const [uploadBook, setUploadBook] = useState("");
   const [file, setFile] = useState(null);
@@ -976,7 +977,19 @@ function DigitalAdmin({ notify }) {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  const loadAllAccess = async () => {
+    try {
+      const result = await get("/digital-access/all");
+      setAllAccess(asArray(result.digital_access));
+    } catch (e) {
+      notify(errorText(e), "error");
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+    loadAllAccess();
+  }, []);
 
   const digitalBooks = books.filter(book => book.book_type === "digital" && book.status === "active");
   const selectedUploadBook = digitalBooks.find(book => book.book_id === uploadBook);
@@ -1011,6 +1024,8 @@ function DigitalAdmin({ notify }) {
 
       const resultData = await get(`/digital-access/${encodeURIComponent(studentId)}`);
       setAccess(asArray(resultData));
+      const allData = await get("/digital-access/all");
+      setAllAccess(asArray(allData.digital_access));
     } catch (e) {
       notify(errorText(e), "error");
     }
@@ -1157,6 +1172,16 @@ function DigitalAdmin({ notify }) {
             <button className="danger-btn">Revoke access</button>
           </form>
         </div>
+      </div>
+
+      <div className="panel">
+        <div className="panel-head">
+          <div><h3>All Digital Permissions</h3><p>Every active digital book access granted to students.</p></div>
+        </div>
+        <RecordsTable
+          records={allAccess}
+          columns={["student_name", "usn", "book_title", "book_id", "status"]}
+        />
       </div>
 
       <div className="panel">
