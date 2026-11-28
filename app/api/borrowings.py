@@ -340,6 +340,10 @@ def get_student_fines(student_id: str):
 
     return {
         "student_id": student_id,
+        "usn": student.to_dict().get("usn"),
+        "full_name": student.to_dict().get("full_name"),
+        "email": student.to_dict().get("email"),
+        "department": student.to_dict().get("department"),
         "total_fines": len(result),
         "pending_fines_paise": pending,
         "pending_fines_rupees": pending / 100,

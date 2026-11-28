@@ -1286,6 +1286,7 @@ function StudentDigital({ profile }) {
 
 function FineDesk({ notify }) {
   const [studentId, setStudentId] = useState("");
+  const [studentInfo, setStudentInfo] = useState(null);
   const [fines, setFines] = useState([]);
   const [fineId, setFineId] = useState("");
   const [method, setMethod] = useState("cash");
@@ -1294,7 +1295,9 @@ function FineDesk({ notify }) {
   const search = async (e) => {
     e.preventDefault();
     try {
-      setFines(asArray(await get(`/borrowings/fines/student/${encodeURIComponent(studentId)}`)));
+      const data = await get(`/borrowings/fines/student/${encodeURIComponent(studentId)}`);
+      setStudentInfo(data);
+      setFines(asArray(data.fines));
     } catch (e) {
       notify(errorText(e), "error");
     }
@@ -1308,7 +1311,9 @@ function FineDesk({ notify }) {
         received_by: "LIBRARIAN001"
       });
       notify("Fine payment recorded.");
-      setFines(asArray(await get(`/borrowings/fines/student/${encodeURIComponent(studentId)}`)));
+      const data = await get(`/borrowings/fines/student/${encodeURIComponent(studentId)}`);
+      setStudentInfo(data);
+      setFines(asArray(data.fines));
     } catch (e) {
       notify(errorText(e), "error");
     }
@@ -1322,7 +1327,9 @@ function FineDesk({ notify }) {
         reason: waiveReason
       });
       notify("Fine waived.");
-      setFines(asArray(await get(`/borrowings/fines/student/${encodeURIComponent(studentId)}`)));
+      const data = await get(`/borrowings/fines/student/${encodeURIComponent(studentId)}`);
+      setStudentInfo(data);
+      setFines(asArray(data.fines));
     } catch (e) {
       notify(errorText(e), "error");
     }
@@ -1340,6 +1347,14 @@ function FineDesk({ notify }) {
           <input required placeholder="Student ID or USN" value={studentId} onChange={e => setStudentId(e.target.value)} />
           <button className="secondary-btn"><Search size={16} /> Search fines</button>
         </form>
+        {studentInfo && (
+          <div className="info-card" style={{ marginTop: 14 }}>
+            <p><strong>Name:</strong> {studentInfo.full_name}</p>
+            <p><strong>USN:</strong> {studentInfo.usn}</p>
+            <p><strong>Email:</strong> {studentInfo.email}</p>
+            <p><strong>Department:</strong> {studentInfo.department}</p>
+          </div>
+        )}
         <RecordsTable records={fines} columns={["fine_id", "borrowing_id", "student_id", "overdue_days", "fine_amount_paise", "payment_status"]} />
       </div>
 
