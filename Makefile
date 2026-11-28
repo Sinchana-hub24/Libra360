@@ -59,3 +59,8 @@ run:
 	fi
 	@echo "Library360 backend starting on http://127.0.0.1:8000"
 	@echo "Library360 frontend starting on http://127.0.0.1:5173"
+	@echo ""
+	@echo "=== Test Login ==="
+	@echo "Librarian email:    admin@library360.local"
+	@echo "Librarian password: AdminPassword123!"
+	@echo "=================="
