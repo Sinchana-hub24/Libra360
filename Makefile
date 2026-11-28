@@ -42,14 +42,11 @@ setup-librarian:
 		-d '{"full_name":"Library Admin","email":"admin@library360.local","password":"AdminPassword123!"}'
 
 run:
-	@if docker ps --format '{{.Names}}' | grep -q '^floci-gcp$$'; then \
-		echo "floci-gcp is already running."; \
-	else \
-		docker run -d --name floci-gcp -p 4588:4588 \
+	@docker rm -f floci-gcp 2>/dev/null || true
+	@docker run -d --name floci-gcp -p 4588:4588 \
 			-e FLOCI_GCP_STORAGE_MODE=hybrid \
 			-v floci-gcp-data:/app/data \
-			floci/floci-gcp:latest; \
-	fi
+			floci/floci-gcp:latest;
 	@set -a && . ./.env && set +a && nohup .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/opencode/library360-backend.log 2>&1 & echo "backend pid $$!"
 	@cd Library360_Frontend && nohup npm run dev > /tmp/opencode/library360-frontend.log 2>&1 & echo "frontend pid $$!"
 	@echo "Library360 backend starting on http://127.0.0.1:8000"
